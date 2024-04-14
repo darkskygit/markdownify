@@ -1,5 +1,9 @@
 import { DomainRouterBuilder, domainRoutersHandler } from './utils'
+
+import { MarkdownifyRouter } from './router'
 import type { Env } from './types'
+
+const markdownify = MarkdownifyRouter()
 
 const routers = DomainRouterBuilder.create<Env>()
 	// apis
