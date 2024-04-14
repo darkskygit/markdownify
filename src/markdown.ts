@@ -7,6 +7,10 @@ import { parseHTML } from 'linkedom'
 import type { Env } from './types'
 import { fixUrl, log } from './utils'
 
+import READABILITY_JS from './readability.bin'
+
+const READABILITY_JS_TEXT = new TextDecoder().decode(READABILITY_JS as ArrayBuffer)
+
 function pruneQuery(query: string[] | string | undefined) {
 	return Array.isArray(query) ? query[0] : query || ''
 }
@@ -16,28 +20,34 @@ export async function handlePageMarkdown(request: IRequest, env: Env) {
 	if (!url) return new Response('Invalid URL', { status: 400 })
 	url.hash = ''
 
-	const browser = await getBrowser(env.BROWSER)
+	const cacheKey = new Request(url.href, { headers: {} })
+	const cache = caches.default
+	let response = await cache.match(cacheKey)
+	if (!response) {
+		const browser = await getBrowser(env.BROWSER)
 
-	// Do your work here
-	let markdown
-	try {
-		console.log(`Navigating to ${url}`)
-		const page = await browser.newPage()
-		page.setViewport({ width: 1920, height: 1080 })
-		console.log(`Navigating to ${url.toString().toLowerCase()}`)
-		const response = await page.goto(url.toString().toLowerCase(), { timeout: 10_000 })
-		console.log(`Response status: ${response?.status()}`)
-		markdown = await htmlToMarkdown(url, response!)
-	} finally {
-		// All work done, so free connection (IMPORTANT!)
-		await browser.disconnect()
+		// Do your work here
+		let markdown
+		try {
+			const page = await newPage(browser)
+			const response = await page.goto(url.toString().toLowerCase(), { waitUntil: ['load', 'domcontentloaded', 'networkidle0'], timeout: 10_000 })
+			markdown = await htmlToMarkdown(url, page, response!)
+		} finally {
+			// All work done, so free connection (IMPORTANT!)
+			await browser.disconnect()
+		}
+
+		const response = new Response(markdown.toString(), {
+			headers: {
+				'content-type': 'text/plain; charset=utf-8',
+			},
+		})
+		await cache.put(cacheKey, response.clone())
+
+		return response
+	} else {
+		return response
 	}
-
-	return new Response(markdown.toString(), {
-		headers: {
-			'content-type': 'text/plain; charset=utf-8',
-		},
-	})
 }
 
 class TextHandler {
@@ -52,9 +62,16 @@ class TextHandler {
 	}
 }
 
-async function htmlToMarkdown(url: URL, response: HTTPResponse) {
+async function htmlToMarkdown(url: URL, page: puppeteer.Page, response: HTTPResponse) {
 	let title = ''
 	const textHandler = new TextHandler()
+	const rawHtml: string = await Promise.race([
+		page.evaluate('giveSnapshot()').then((s: any) => {
+			title = s?.parsed?.title || s?.title
+			return s?.parsed?.content || s?.html
+		}),
+		response.text(),
+	])
 	const html = await new HTMLRewriter()
 		.on('title', {
 			text(text) {
@@ -62,7 +79,7 @@ async function htmlToMarkdown(url: URL, response: HTTPResponse) {
 			},
 		})
 		.onDocument(textHandler)
-		.transform(new Response(await response.buffer()))
+		.transform(new Response(rawHtml))
 		.text()
 
 	const markdown = await stringToMarkdown(html)
@@ -141,20 +158,44 @@ function tidyMarkdown(markdown: string): string {
 	return normalizedMarkdown.trim()
 }
 
+async function newPage(browser: puppeteer.Browser) {
+	const page = await browser.newPage()
+	const preparations = []
+
+	preparations.push(page.setBypassCSP(true))
+	preparations.push(page.setViewport({ width: 1920, height: 1080 }))
+	preparations.push(page.evaluateOnNewDocument(READABILITY_JS_TEXT))
+	preparations.push(
+		page.evaluateOnNewDocument(`
+function giveSnapshot() {
+	const {title,location,documentElement,body} = document;
+	return {
+		title,href:location.href,html:documentElement.outerHTML,text:body.innerText,
+		parsed: new Readability(document.cloneNode(true)).parse()
+	};
+}`)
+	)
+
+	await Promise.all(preparations)
+
+	// TODO: further setup the page;
+
+	return page
+}
+
 async function getBrowser(endpoint: puppeteer.BrowserWorker): Promise<puppeteer.Browser> {
 	// Pick random session from open sessions
 	const sessionId = await pickSession(endpoint)
 	if (sessionId) {
 		try {
-			console.log(`Connecting to ${sessionId}`)
 			return await puppeteer.connect(endpoint, sessionId)
-		} catch (e) {
+		} catch (e: any) {
 			// another worker may have connected first
-			console.log(`Failed to connect to ${sessionId}. Error ${e}`)
+			log(`Failed to connect to ${sessionId}.`, 'ERROR', { message: e.message, stack: e.stack })
 		}
 	}
 
-	console.log('No open sessions, launching new session')
+	log('No open sessions, launching new session', 'DEBUG')
 	// No open sessions, launch new session
 	return await puppeteer.launch(endpoint)
 }
