@@ -3,6 +3,7 @@
 	"version": "0.0.1",
 	"license": "AGPL-3.0-only",
 	"devDependencies": {
+		"@cloudflare/puppeteer": "^0.0.6",
 		"@cloudflare/workers-types": "^4.20240405.0",
 		"@types/node": "^20.12.7",
 		"itty-router": "4.0.25",
