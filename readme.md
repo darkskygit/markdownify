@@ -4,6 +4,12 @@ converts any URL to an LLM-friendly input with simple request, run in Cloudflare
 
 Inspire by [reader](https://github.com/jina-ai/reader)
 
+Demo: https://markdownify.darksky2048.workers.dev/api/markdown?url=some-url
+
+- [markdownify github docs](https://markdownify.darksky2048.workers.dev/api/markdown?url=https://docs.github.com/en/get-started/start-your-journey/about-github-and-git)
+- [markdownify about google](https://markdownify.darksky2048.workers.dev/api/markdown?url=https://about.google)
+- [markdownify twitter](https://markdownify.darksky2048.workers.dev/api/markdown?url=https://x.com/elonmusk)
+
 ## Usage
 
 ```bash

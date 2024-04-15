@@ -5,7 +5,7 @@ import type { Env } from './types';
 
 const markdownify = MarkdownifyRouter();
 
-const DEV_WORKER_SCOPE = 'darksky';
+const DEV_WORKER_SCOPE = 'darksky2048';
 
 const routers = DomainRouterBuilder.create<Env>()
 	// apis
