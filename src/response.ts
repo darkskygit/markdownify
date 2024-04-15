@@ -2,7 +2,7 @@ export function respBadRequest(
 	error: string,
 	options: {
 		allowOrigin?: string | null;
-	} = {}
+	} = {},
 ) {
 	const headers = new Headers();
 	headers.set('content-type', 'application/json;charset=UTF-8');
@@ -16,7 +16,7 @@ export function respBadRequest(
 		{
 			headers,
 			status: 400,
-		}
+		},
 	);
 }
 
@@ -25,7 +25,7 @@ export function respOk(
 	options: {
 		allowOrigin?: string;
 		headers?: Record<string, string>;
-	} = {}
+	} = {},
 ) {
 	const headers = new Headers();
 	headers.set('content-type', 'application/json;charset=UTF-8');
@@ -47,7 +47,7 @@ export function respOk(
 export function respNoContent(
 	options: {
 		allowOrigin?: string;
-	} = {}
+	} = {},
 ) {
 	const headers = new Headers();
 	if (options.allowOrigin) {
@@ -62,7 +62,7 @@ export function respNoContent(
 export function respNotFound(
 	options: {
 		allowOrigin?: string;
-	} = {}
+	} = {},
 ): Response {
 	const headers = new Headers();
 	headers.set('content-type', 'application/json;charset=UTF-8');
@@ -78,7 +78,7 @@ export function respNotFound(
 export function respMethodNotAllowed(
 	options: {
 		allowOrigin?: string;
-	} = {}
+	} = {},
 ): Response {
 	const headers = new Headers();
 	headers.set('content-type', 'application/json;charset=UTF-8');

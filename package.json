@@ -19,5 +19,15 @@
 	"scripts": {
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy"
+	},
+	"packageManager": "pnpm@8.15.4",
+	"pnpm": {
+		"overrides": {
+			"hasown": "npm:@nolyfill/hasown@latest",
+			"is-arguments": "npm:@nolyfill/is-arguments@latest",
+			"is-generator-function": "npm:@nolyfill/is-generator-function@latest",
+			"is-typed-array": "npm:@nolyfill/is-typed-array@latest",
+			"which-typed-array": "npm:@nolyfill/which-typed-array@latest"
+		}
 	}
 }
