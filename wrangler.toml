@@ -1,8 +1,9 @@
 name = "markdownify"
 main = "src/index.ts"
 compatibility_date = "2023-02-09"
-workers_dev = false
+workers_dev = true
 minify = true
+node_compat = true
 account_id = "938b148253c4dccdd81cc7c8e1daa767"
 
 browser = { binding = "BROWSER" }
